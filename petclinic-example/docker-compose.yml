@@ -1,0 +1,21 @@
+version: '2'
+
+services:
+   db:
+     image: serverzoo/petclinicdb
+     restart: always
+     environment:
+       MYSQL_ROOT_PASSWORD: mysql
+       MYSQL_DATABASE: petclinic
+       MYSQL_USER: root
+       MYSQL_PASSWORD: mysql
+
+   petclinic:
+     depends_on:
+       - db
+     build: .
+     ports:
+       - "18080:8080"
+     restart: always
+     environment:
+       - spring.profiles.active=mysql
