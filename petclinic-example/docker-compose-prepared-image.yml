@@ -1,0 +1,18 @@
+version: '2'
+
+services:
+   db:
+     image: petclinic-db
+
+   petclinic:
+     depends_on:
+       - db
+     build: .
+     ports:
+       - "18080:8080"
+     environment:
+       - spring.profiles.active=mysql
+       - spring.datasource.url=jdbc:mysql://db/petclinic # "db" is the name we gave to our mysql container
+       - spring.datasource.username=root
+       - spring.datasource.password=mysql
+       - spring.datasource.initialize=false # db is already initialized!
