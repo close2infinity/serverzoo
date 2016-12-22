@@ -5,6 +5,7 @@ services:
      build:
        context: .
        dockerfile: Dockerfile-db
+     image: close2infinity/petclinicdb
      restart: always
      environment:
        MYSQL_ROOT_PASSWORD: mysql
@@ -16,6 +17,7 @@ services:
      depends_on:
        - db
      build: .
+     image: close2infinity/petclinic
      ports:
        - "18080:8080"
        - "14441:14441"

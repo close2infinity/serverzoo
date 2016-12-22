@@ -11,13 +11,13 @@ targetCompatibility = 1.8
 
 task mavenBuild(type: Exec) {
   inputs.files(fileTree("src"))
-  outputs.file('uild/libs/spring-petclinic-1.4.2.jar')
+  outputs.file("build/libs/spring-petclinic-${version}.jar")
   commandLine 'mvn', 'install', '-U', '-DskipTests'
 }
 
 task createPetclinicDb(type: Exec) {
   inputs.files(fileTree("src/main/resources/db/mysql/flyway_migrations"))
-  outputs.file('build/libs/spring-petclinic-1.4.2-migrations.jar')
+  outputs.file("build/libs/spring-petclinic-${version}-migrations.jar")
   commandLine './build-petclinic-db.sh'
 }
 
@@ -47,6 +47,10 @@ clean.dependsOn(mavenClean)
 
 task run(type: Exec, dependsOn: createPetclinic) {
   commandLine 'docker-compose', 'up'
+}
+
+task bundle(type: Exec, dependsOn: createPetclinic) {
+  commandLine 'docker-compose', 'bundle', '--push-images'
 }
 
 repositories {
