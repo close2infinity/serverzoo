@@ -1,2 +1,2 @@
 rootProject.name = 'serverzoo'
-include 'test', 'petclinic'
+include 'test', 'petclinic-example'

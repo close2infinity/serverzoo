@@ -1,4 +1,5 @@
 apply plugin: 'maven'
+apply plugin: 'java'
 
 group = 'org.springframework.samples'
 version = '1.4.2'
@@ -9,12 +10,45 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 test {
-    exclude '**'
+  exclude '**'
 }
 
-mavenBuild
+task mavenBuild(type: Exec) {
+  commandLine 'mvn', 'install'
+}
 
-build.dependsOn(mavenBuild)
+task migrationsChecksum(type: Jar) {
+  from 'src/main/resources/db/mysql/flyway_migrations'
+  classifier = 'migrations'
+
+  doLast {
+    ant.checksum(file: migrationsChecksum.archivePath)
+  }
+}
+
+task createPetclinicDb(type: Exec, dependsOn: migrationsChecksum) {
+  inputs.files(fileTree("src/main/resources/db/mysql/flyway_migrations"))
+  outputs.file('build/libs/spring-petclinic-1.4.2-migrations.jar.MD5')
+  commandLine './build-petclinic-db.sh'
+}
+
+task createPetclinic(type: Exec, dependsOn: createPetclinicDb) {
+  commandLine 'docker-compose', 'rm', '-f'
+  commandLine 'docker-compose', 'pull'
+  commandLine 'docker-compose', 'build', '--no-cache'
+}
+
+build.dependsOn(mavenBuild, createPetclinic)
+
+task run(type: Exec, dependsOn: createPetclinic) {
+  commandLine 'docker-compose up'
+}
+
+task mavenClean(type: Exec) {
+  commandLine 'mvn', 'clean'
+}
+
+clean.dependsOn(mavenClean)
 
 repositories {
   maven { url "http://repo.maven.apache.org/maven2" }
