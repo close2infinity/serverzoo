@@ -10,6 +10,8 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 task mavenBuild(type: Exec) {
+  inputs.files(fileTree("src"))
+  outputs.file('uild/libs/spring-petclinic-1.4.2.jar')
   commandLine 'mvn', 'install', '-U', '-DskipTests'
 }
 
