@@ -2,14 +2,14 @@ version: '2'
 
 services:
    mysql:
-     image: mysql:5.7 # we start from a plain mysql image and add our data to commit it later
+     image: mysql:5.7
      environment:
        MYSQL_ROOT_PASSWORD: mysql
        MYSQL_DATABASE: petclinic
 
    flyway:
      depends_on:
-       - mysql # how do we handle the sleep here?
+       - mysql
      volumes:
        - ./flyway_migrations:/flyway/sql
      image: shouldbee/flyway
