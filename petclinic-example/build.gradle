@@ -9,40 +9,33 @@ description = """petclinic"""
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-test {
-  exclude '**'
-}
-
 task mavenBuild(type: Exec) {
-  commandLine 'mvn', 'install'
+  commandLine 'mvn', 'install', '-U', '-DskipTests'
 }
 
-task migrationsChecksum(type: Jar) {
-  from 'src/main/resources/db/mysql/flyway_migrations'
-  classifier = 'migrations'
-
-  doLast {
-    ant.checksum(file: migrationsChecksum.archivePath)
-  }
-}
-
-task createPetclinicDb(type: Exec, dependsOn: migrationsChecksum) {
+task createPetclinicDb(type: Exec) {
   inputs.files(fileTree("src/main/resources/db/mysql/flyway_migrations"))
-  outputs.file('build/libs/spring-petclinic-1.4.2-migrations.jar.MD5')
+  outputs.file('build/libs/spring-petclinic-1.4.2-migrations.jar')
   commandLine './build-petclinic-db.sh'
 }
 
-task createPetclinic(type: Exec, dependsOn: createPetclinicDb) {
+task createPetclinic(type: Exec, dependsOn: [build, createPetclinicDb]) {
   commandLine 'docker-compose', 'rm', '-f'
   commandLine 'docker-compose', 'pull'
   commandLine 'docker-compose', 'build', '--no-cache'
 }
 
-build.dependsOn(mavenBuild, createPetclinic)
+build.dependsOn(mavenBuild)
 
-task run(type: Exec, dependsOn: createPetclinic) {
-  commandLine 'docker-compose up'
+test {
+  exclude '**'
 }
+
+task mavenTest(type: Exec) {
+  commandLine 'mvn', 'test'
+}
+
+test.dependsOn(mavenTest)
 
 task mavenClean(type: Exec) {
   commandLine 'mvn', 'clean'
@@ -50,9 +43,14 @@ task mavenClean(type: Exec) {
 
 clean.dependsOn(mavenClean)
 
+task run(type: Exec, dependsOn: createPetclinic) {
+  commandLine 'docker-compose', 'up'
+}
+
 repositories {
   maven { url "http://repo.maven.apache.org/maven2" }
 }
+
 dependencies {
   compile group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: SPRING_BOOT_VERSION
   compile group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version: SPRING_BOOT_VERSION
