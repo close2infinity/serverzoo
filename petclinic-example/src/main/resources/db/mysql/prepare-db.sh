@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DB_IMAGE_NAME=close2infinity/petclinicdb
+DB_IMAGE_NAME=petclinic-db
 TMP_DATA_DIR=.tmp-mysql-data
 
 # start up the database
