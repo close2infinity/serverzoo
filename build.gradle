@@ -1,16 +1,141 @@
-group 'com.comsysto.labs'
-version '1.0.0-SNAPSHOT'
-
-apply plugin: 'groovy'
+apply plugin: 'maven'
 apply plugin: 'java'
 
+group = 'org.springframework.samples'
+version = '1.4.2'
+
+description = """petclinic"""
+
 sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+task getPetClinic(type: Exec) {
+  description 'Checkout or update the Spring Petclinic example from GitHub'
+
+  if (new File("${project.APP_DIR}/.git").exists()) {
+    workingDir "${project.APP_DIR}"
+    commandLine 'git', 'pull', 'origin'
+  }
+  else {
+    commandLine 'git', 'clone', 'https://github.com/spring-projects/spring-petclinic.git', "${project.APP_DIR}"
+  }
+}
+
+task mavenBuild(type: Exec, dependsOn: getPetClinic) {
+  description 'Builds and installs the project using Maven'
+
+  workingDir "${project.APP_DIR}"
+  inputs.files(fileTree("src"))
+  outputs.file("target/spring-petclinic-${version}.jar")
+  commandLine 'mvn', 'install', '-U', '-DskipTests'
+}
+
+task copyMigrationSources(type: Copy, dependsOn: getPetClinic) {
+  description 'Copy the original SQL into a Flyway structure'
+
+  from("${project.APP_DIR}/src/main/resources/db/mysql") {
+    include 'schema.sql'
+    rename { s -> 'V1__schema.sql'}
+  }
+  from("${project.APP_DIR}/src/main/resources/db/mysql") {
+    include 'data.sql'
+    rename { s -> 'V2__data.sql'}
+  }
+  into 'build/flyway_migrations'
+}
+
+task checksumMigrationSources(type: Zip, dependsOn: copyMigrationSources) {
+  description 'ZIPs the migration sources and creates a MD5 checksum'
+
+  from 'build/flyway_migrations'
+  archiveName 'spring-petclinic-1.4.2-migration.zip'
+  doLast {
+    ant.checksum file: 'build/distributions/spring-petclinic-1.4.2-migration.zip'
+  }
+}
+
+task createPetclinicDb(type: Exec, dependsOn: checksumMigrationSources) {
+  description 'Creates the MySQL Petclinic database as a Docker image'
+
+  outputs.upToDateWhen {
+    def migrationsChecksum = readMigrationsChecksum()
+    'docker images --format "{{.Tag}}" close2infinity/petclinicdb'.execute().text.tokenize('\n').any {
+      tag -> compareChecksums(tag.replace('"', ""), migrationsChecksum.replace('\n', ""))
+    }
+  }
+  commandLine './build-petclinic-db.sh'
+}
+
+private static String readMigrationsChecksum() {
+  def f = new File('build/distributions/spring-petclinic-1.4.2-migration.zip.MD5')
+  def result = f.exists() ? f.text : ""
+  printf "Migrations checksum: ${result}"
+  result
+}
+
+private boolean compareChecksums(tag, migrationsChecksum) {
+  def result = tag == "MD5_${migrationsChecksum}"
+  println("Comparing image tag ${tag} to migrations checksum (MD5_)${migrationsChecksum} -> ${result}")
+  return result
+}
+
+task createPetclinic(type: Exec, dependsOn: [build, createPetclinicDb]) {
+  description 'Creates the Petclinic docker image'
+
+  commandLine 'docker-compose', 'rm', '-f'
+  commandLine 'docker-compose', 'pull'
+  commandLine 'docker-compose', 'build', '--no-cache'
+}
+
+build.dependsOn(mavenBuild)
+
+test {
+  exclude '**'
+}
+
+task mavenTest(type: Exec) {
+  description 'Runs Petclinic tests using Maven'
+
+  workingDir "${project.APP_DIR}"
+  commandLine 'mvn', 'test'
+}
+
+test.dependsOn(mavenTest)
+
+task run(type: Exec, dependsOn: createPetclinic) {
+  description 'Runs the Petclinic service'
+
+  commandLine 'docker-compose', 'up'
+}
+
+task bundle(type: Exec, dependsOn: createPetclinic) {
+  description 'Creates a docker-compose bundle (.dab)'
+
+  commandLine 'docker-compose', 'bundle', '--push-images'
+}
 
 repositories {
-    mavenCentral()
+  maven { url "http://repo.maven.apache.org/maven2" }
 }
 
 dependencies {
-    compile 'org.codehaus.groovy:groovy-all:2.3.11'
-    testCompile group: 'junit', name: 'junit', version: '4.11'
+  compile group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: SPRING_BOOT_VERSION
+  compile group: 'org.springframework.boot', name: 'spring-boot-starter-cache', version: SPRING_BOOT_VERSION
+  compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: SPRING_BOOT_VERSION
+  compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: SPRING_BOOT_VERSION
+  compile(group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version: SPRING_BOOT_VERSION) {
+    exclude(module: 'groovy')
+  }
+  compile group: 'javax.cache', name: 'cache-api', version: '1.0.0'
+  compile group: 'org.ehcache', name: 'ehcache', version: '3.1.3'
+  compile group: 'org.webjars', name: 'webjars-locator', version: '0.32'
+  compile group: 'org.webjars', name: 'jquery', version: '2.2.4'
+  compile group: 'org.webjars', name: 'jquery-ui', version: '1.11.4'
+  compile group: 'org.webjars', name: 'bootstrap', version: '3.3.6'
+  runtime group: 'org.hsqldb', name: 'hsqldb', version: '2.3.3'
+  runtime group: 'mysql', name: 'mysql-connector-java', version: '5.1.40'
+  runtime group: 'org.springframework.boot', name: 'spring-boot-devtools', version: SPRING_BOOT_VERSION
+  testCompile(group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: SPRING_BOOT_VERSION) {
+    exclude(module: 'commons-logging')
+  }
 }
