@@ -11,6 +11,6 @@ services:
      depends_on:
        - mysql
      volumes:
-       - ./flyway_migrations:/flyway/sql
+       - ./build/flyway_migrations:/flyway/sql
      image: shouldbee/flyway
      command: -url=jdbc:mysql://mysql/petclinic -user=root -password=mysql migrate

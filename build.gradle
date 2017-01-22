@@ -59,11 +59,11 @@ task createPetclinicDb(type: Exec, dependsOn: checksumMigrationSources) {
 
   outputs.upToDateWhen {
     def migrationsChecksum = readMigrationsChecksum()
-    'docker images --format "{{.Tag}}" close2infinity/petclinicdb'.execute().text.tokenize('\n').any {
+    'docker images --format "{{.Tag}}" petclinic-db'.execute().text.tokenize('\n').any {
       tag -> compareChecksums(tag.replace('"', ""), migrationsChecksum.replace('\n', ""))
     }
   }
-  commandLine './build-petclinic-db-docker-only.sh'
+  commandLine './build-petclinic-db-docker-compose.sh'
 }
 
 private static String readMigrationsChecksum() {
@@ -82,6 +82,8 @@ private boolean compareChecksums(tag, migrationsChecksum) {
 task createPetclinic(type: Exec, dependsOn: [build, createPetclinicDb]) {
   description 'Creates the Petclinic docker image'
 
+  // TODO this does not find any docker-compose file...
+  // this should be docker-compose-petclinic-mysql-prepared-image.yml, right?
   commandLine 'docker-compose', 'rm', '-f'
   commandLine 'docker-compose', 'pull'
   commandLine 'docker-compose', 'build', '--no-cache'
@@ -111,6 +113,7 @@ task run(type: Exec, dependsOn: createPetclinic) {
 task bundle(type: Exec, dependsOn: createPetclinic) {
   description 'Creates a docker-compose bundle (.dab)'
   // TODO this does not find any docker-compose file...
+  // this should be docker-compose-petclinic-mysql-prepared-image.yml, right?
   commandLine 'docker-compose', 'bundle', '--push-images'
 }
 
