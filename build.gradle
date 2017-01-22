@@ -63,7 +63,7 @@ task createPetclinicDb(type: Exec, dependsOn: checksumMigrationSources) {
       tag -> compareChecksums(tag.replace('"', ""), migrationsChecksum.replace('\n', ""))
     }
   }
-  commandLine './build-petclinic-db.sh'
+  commandLine './build-petclinic-db-docker-only.sh'
 }
 
 private static String readMigrationsChecksum() {
