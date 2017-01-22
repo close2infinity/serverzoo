@@ -110,7 +110,7 @@ task run(type: Exec, dependsOn: createPetclinic) {
 
 task bundle(type: Exec, dependsOn: createPetclinic) {
   description 'Creates a docker-compose bundle (.dab)'
-
+  // TODO this does not find any docker-compose file...
   commandLine 'docker-compose', 'bundle', '--push-images'
 }
 
