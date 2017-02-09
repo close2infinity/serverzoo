@@ -1,5 +1,9 @@
 version: '2'
 
+####
+#### this docker-compose can be used to start the petclinic with a plain mysql that is populated on application startup
+####
+
 services:
    db:
      image: mysql:5.7

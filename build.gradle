@@ -82,11 +82,9 @@ private boolean compareChecksums(tag, migrationsChecksum) {
 task createPetclinic(type: Exec, dependsOn: [build, createPetclinicDb]) {
   description 'Creates the Petclinic docker image'
 
-  // TODO this does not find any docker-compose file...
-  // this should be docker-compose-petclinic-mysql-prepared-image.yml, right?
-  commandLine 'docker-compose', 'rm', '-f'
-  commandLine 'docker-compose', 'pull'
-  commandLine 'docker-compose', 'build', '--no-cache'
+  commandLine 'docker-compose', '--file', 'docker-compose-petclinic-mysql-prepared-image.yml', 'rm', '-f'
+  commandLine 'docker-compose', '--file', 'docker-compose-petclinic-mysql-prepared-image.yml', 'pull'
+  commandLine 'docker-compose', '--file', 'docker-compose-petclinic-mysql-prepared-image.yml', 'build', '--no-cache'
 }
 
 build.dependsOn(mavenBuild)
@@ -112,9 +110,8 @@ task run(type: Exec, dependsOn: createPetclinic) {
 
 task bundle(type: Exec, dependsOn: createPetclinic) {
   description 'Creates a docker-compose bundle (.dab)'
-  // TODO this does not find any docker-compose file...
-  // this should be docker-compose-petclinic-mysql-prepared-image.yml, right?
-  commandLine 'docker-compose', 'bundle', '--push-images'
+
+  commandLine 'docker-compose', '--file', 'docker-compose-petclinic-mysql-prepared-image.yml', 'bundle', '--push-images'
 }
 
 repositories {

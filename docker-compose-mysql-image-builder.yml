@@ -1,5 +1,9 @@
 version: '2'
 
+####
+#### this docker-compose includes a plain mysql an a flyway container to push petclinic data into it
+####
+
 services:
    mysql:
      image: mysql:5.7

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+####
+#### this script is used to build the mysql image which already has petclinic data in it
+####
+
 DB_IMAGE_NAME=petclinic-db
 TMP_DATA_DIR=build/tmp-mysql-data
 
