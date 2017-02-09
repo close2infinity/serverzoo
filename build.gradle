@@ -105,7 +105,7 @@ test.dependsOn(mavenTest)
 task run(type: Exec, dependsOn: createPetclinic) {
   description 'Runs the Petclinic service'
 
-  commandLine 'docker-compose', 'up'
+  commandLine 'docker-compose', '--file', 'docker-compose-petclinic-mysql-prepared-image.yml', 'up'
 }
 
 task bundle(type: Exec, dependsOn: createPetclinic) {
